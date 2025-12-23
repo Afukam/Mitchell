@@ -1,0 +1,10 @@
+# Ignore all log directories
+mitchell_results/
+
+# Ignore sensitive password files
+*.txt
+*.log
+
+# Ignore system-specific files
+.DS_Store
+__pycache__/
