@@ -4,7 +4,7 @@ changeip(){
     currentInfo=$(curl -s https://ipapi.co/json/) #Getting data from ipapi a geolocator
     currentCountry=$( echo $currentInfo | jq -r '.country_code') #print out your current location and then pass that into json processor, extracting the country code, if it doesn't exist print out null
 
-    echo " Your are currently in : $currentCountry" #print out current country
+    echo "You are currently in: $currentCountry" #print out current country
 
     countryList=("NG" "AU" "US" "CA" "DZ" "EG" "GA" "GQ" "HT" "IE" "IS" "LS" "LU" "NF" "PR" "PS" "RW" "SE" "SB" "SO" "SS" "ZW") #i got a list of country codes from https://worldostats.com/country-stats/country-iso-code-by-country/#google_vignette 
     randomizing=${countryList[$RANDOM % ${#countryList[@]}]} #the logic to get a random country from the list
@@ -15,7 +15,7 @@ changeip(){
         do
             targetCountry=$randomizing
         done
-    echo "Finding an IP address in: $targetCountry ... StandBy"
+    echo "Finding an IP address in: $targetCountry ... StandBy."
 
 
     subnettedIp=$(curl -s "https://stat.ripe.net/data/country-resource-list/data.json?resource=$targetCountry" \
@@ -25,7 +25,7 @@ changeip(){
     octet=$((1 + RANDOM % 254))
     newIp="$baseIP.$octet"
 
-    echo "New Ip address: $newIp"
+    echo "New IP address: $newIp"
 }
 # --- Function for Option 2: Change MAC Address with Macchanger ---
 change_mac() {
@@ -39,7 +39,7 @@ change_mac() {
     macchanger -s $interface
     
     # 3. The Hardware Rese
-    echo "[*] Shuting down interface for spoofing..."
+    echo "[*] Shutting down interface for spoofing..."
     sudo ip link set dev $interface down
     
     # 4. Applying a random, but valid, vendor MAC
@@ -53,10 +53,10 @@ change_mac() {
 # --- Function for Option 3: Nmap Scanning ---
 run_nmap() {
     mkdir -p ./mitchell_results
-    echo -e "Nmap Scanning Suite"
-    echo "a) TCP Connect Scan "
-    echo "b) UDP Scan"
-    echo "c) Vulnerability Scan (Check for known exploits)"
+    echo -e "Nmap Scanning Suite."
+    echo "a) TCP Connect Scan."
+    echo "b) UDP Scan."
+    echo "c) Vulnerability Scan (Check for known exploits)."
     read -p "Select scan type [a-c]: " nmap_choice
 
     SUBNET=$(ip route show | grep default | awk '{print $3}' | cut -d. -f1-3).0/24
@@ -87,10 +87,10 @@ run_nmap() {
 # --- Function for Option 4: Check Processes ---
 check_processes() {
     mkdir -p ./mitchell_results
-    echo -e "-System Process Monitor"
-    echo "1) View Process Tree"
-    echo "2) Top Memory Consumers"
-    echo "3) Search for a specific process"
+    echo -e "-System Process Monitor."
+    echo "1) View Process Tree."
+    echo "2) Top Memory Consumers."
+    echo "3) Search for a specific process."
     read -p "Select view [1-3]: " proc_choice
     logfiles="./process_logs/proc_snapshot_$(date +%F_%H-%M).txt"
     case $proc_choice in
@@ -112,7 +112,7 @@ check_processes() {
     esac
 }
 newPassword() {
-    echo -e "Secure Password Generator"
+    echo -e "Secure Password Generator."
     read -p "Enter desired length (min 20 recommended): " PASS_LEN
 
     password=$(LC_ALL=C tr -dc 'A-Za-z0-9!@#$%^&*()_+=-' < /dev/urandom | head -c "$PASS_LEN")
@@ -120,19 +120,43 @@ newPassword() {
     echo "Generated Password: $password"
 
 }
-echo "Hi there, there are a plethora of options to choose from , but let us keep it simple"
+# --- Function for Option 6: Secure Cleanup ---
+cleanup() {
+    echo -ne "\n[!] WARNING: This will delete ALL logs and reset your MAC. Proceed? (y/n): "
+    read -r confirm
+    if [[ $confirm == "y" ]]; then
+        # 1. Delete the log directories
+        rm -rf ./nmap_logs ./process_logs ./mitchell_results
+        echo "[*] Log directories purged."
+
+        # 2. Reset MAC address to permanent factory default
+        interface=$(ip link show | awk -F': ' '$2 != "lo" && $2 != "" {print $2; exit}')
+        sudo macchanger -p "$interface"
+        echo "[*] MAC address reset to factory default."
+        
+        # 3. Re-create empty directories for next use
+        mkdir -p ./nmap_logs ./process_logs ./mitchell_results
+        echo "[SUCCESS] Environment is clean."
+    else
+        echo "[*] Cleanup cancelled."
+    fi
+}
+echo "Hi there, there are a plethora of options to choose from, but let us keep it simple".
 
 echo "*** 1 Change my IP adddress ***" #A
 
 echo "*** 2 Change my Mac address ***"
 
-echo "*** 3 Perfrom a scan using an Nmap command ***"
+echo "*** 3 Perform a scan using an Nmap command ***"
 
 echo "*** 4 Check processes running ***" #F
 
 echo "*** 5 Generate a password ***"
 
-echo "*** Do all in the order i tell you ***"
+echo "*** Do all in the order I tell you ***"
+
+echo "*** Clean up after code has run ***"
+
 read -p "Desired Order: " sequence
 for task in $sequence; do
     case $task in
@@ -142,6 +166,7 @@ for task in $sequence; do
         4) check_processes;;
         5) newPassword;;
         *) echo "Task not recognized";;
+        6) cleanup;;
 
     esac
 done
